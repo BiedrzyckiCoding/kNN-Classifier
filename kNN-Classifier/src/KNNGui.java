@@ -5,10 +5,10 @@ import java.util.ArrayList;
 
 public class KNNGui extends JFrame {
 
-    // -- GUI Components --
+    //existing fields
     private JTextField trainingFileField;
     private JTextField testFileField;
-    private JTextField kValueField;       // New text field for k
+    private JTextField kValueField;
     private JButton loadFilesButton;
     private JButton calculateButton;
 
@@ -16,52 +16,68 @@ public class KNNGui extends JFrame {
     private JTextArea testDataArea;
     private JTextArea comparisonsArea;
 
+    //for classifying a single custom vector
+    private JTextField customVectorField; //user input
+    private JButton classifyVectorButton; //button to classify
+    private JLabel classificationResultLabel; //display classification
+
     public KNNGui() {
-        super("kNN-Classifier");
+        super("KNN GUI Example");
         setLayout(new GridLayout(1, 4));
 
-        //column 1: File input, k, and Buttons
+        //column 1: File input, k, single vector, and Buttons
         JPanel column1 = new JPanel();
         column1.setLayout(new BoxLayout(column1, BoxLayout.Y_AXIS));
 
-        //training file path
+        //1. training file
         column1.add(new JLabel("Training File:"));
         trainingFileField = new JTextField("C:\\Users\\Admin\\Desktop\\iris.data", 20);
         column1.add(trainingFileField);
 
-        //test file path
+        //2. test file
         column1.add(new JLabel("Test File:"));
         testFileField = new JTextField("C:\\Users\\Admin\\Desktop\\iris.test.data", 20);
         column1.add(testFileField);
 
-        //k-value input
+        //3. k-value input
         column1.add(new JLabel("k:"));
         kValueField = new JTextField("3", 5);
         column1.add(kValueField);
 
-        //load Files button
-        loadFilesButton = new JButton("Load Files");
-        column1.add(loadFilesButton);
+        //4. single vector input
+        column1.add(new JLabel("Custom Vector (comma-separated):"));
+        customVectorField = new JTextField("5.1,3.5,1.4,0.2");
+        column1.add(customVectorField);
 
-        //calculate Labels button
+        //5. buttons
+        loadFilesButton = new JButton("Load Files");
+        classifyVectorButton = new JButton("Classify Vector");
         calculateButton = new JButton("Calculate Labels");
+
+        //add them in a row or stacked
+        column1.add(loadFilesButton);
         column1.add(calculateButton);
+        column1.add(classifyVectorButton);
+
+        //6. classification result
+        classificationResultLabel = new JLabel("Classification: [None]");
+        column1.add(classificationResultLabel);
 
         add(column1);
 
-        //column 2: Training data display
+        //column 2: training data display
         trainingDataArea = new JTextArea();
         trainingDataArea.setEditable(false);
         JScrollPane scrollPaneTraining = new JScrollPane(trainingDataArea);
         add(scrollPaneTraining);
 
-        //column 3: Test data display
+        //column 3: test data display
         testDataArea = new JTextArea();
         testDataArea.setEditable(false);
         JScrollPane scrollPaneTest = new JScrollPane(testDataArea);
         add(scrollPaneTest);
 
-        //column 4: Comparisons display
+        //column 4: comparisons display
         comparisonsArea = new JTextArea();
         comparisonsArea.setEditable(false);
         JScrollPane scrollPaneComparisons = new JScrollPane(comparisonsArea);
@@ -82,29 +98,37 @@ public class KNNGui extends JFrame {
             }
         });
 
+        //classify the single custom vector
+        classifyVectorButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                classifySingleVector();
+            }
+        });
+
         //window setup
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 400);
+        setSize(1000, 400);
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
     /**
-     * Load the training and test data files.
-     * Store them in Main.trainingDataRows and Main.testDataRows.
+     * Load the training and test data files, storing them in Main.
      */
     private void loadFiles() {
         String trainingPath = trainingFileField.getText().trim();
         String testPath = testFileField.getText().trim();
 
-        //use Main's static methods to read/convert data
+        //read & convert training data
         ArrayList<String> trainingLines = Main.readFile(trainingPath);
         Main.trainingDataRows = Main.convertTrainingDataRow(trainingLines);
 
+        //read & convert test data
         ArrayList<String> testLines = Main.readFile(testPath);
         Main.testDataRows = Main.convertTestDataRow(testLines);
 
-        //display training data
+        //risplay training data
         trainingDataArea.setText("TRAINING DATA LOADED:\n");
         for (var tr : Main.trainingDataRows) {
             trainingDataArea.append(tr.getVector() + " -> " + tr.getLabel() + "\n");
@@ -116,12 +140,13 @@ public class KNNGui extends JFrame {
             testDataArea.append(tdr.getVector() + " -> " + tdr.getLabel() + "\n");
         }
 
-        //clear previous comparisons
+        //clear comparisons
         comparisonsArea.setText("");
+        classificationResultLabel.setText("Classification: [None]");
     }
 
     /**
-     * Parse k, run KNN logic, and display comparison results.
+     * Calculate labels for the entire test set (already loaded).
      */
     private void calculateLabels() {
         //make sure data is loaded
@@ -130,7 +155,6 @@ public class KNNGui extends JFrame {
             return;
         }
 
-        //get user-specified k
         int k;
         try {
             k = Integer.parseInt(kValueField.getText().trim());
@@ -139,13 +163,55 @@ public class KNNGui extends JFrame {
             return;
         }
 
-        //compare labels using Main's static method
-        ArrayList<String> comparisons = Main.compareLabels(k, Main.testDataRows, Main.trainingDataRows);
+        ArrayList<String> results = Main.compareLabels(k, Main.testDataRows, Main.trainingDataRows);
 
-        //display results
         comparisonsArea.setText("COMPARISONS:\n");
-        for (String line : comparisons) {
+        for (String line : results) {
             comparisonsArea.append(line + "\n");
         }
+    }
+
+    /**
+     * Classify a single custom vector that the user enters.
+     */
+    private void classifySingleVector() {
+        //ensure training data is loaded
+        if (Main.trainingDataRows == null || Main.trainingDataRows.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please load the training file first!");
+            return;
+        }
+
+        //parse k
+        int k;
+        try {
+            k = Integer.parseInt(kValueField.getText().trim());
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid k value. Please enter an integer.");
+            return;
+        }
+
+        //parse custom vector from comma-separated input
+        String vectorInput = customVectorField.getText().trim();
+        if (vectorInput.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter a vector (comma-separated).");
+            return;
+        }
+
+        ArrayList<Double> customVector = new ArrayList<>();
+        try {
+            String[] parts = vectorInput.split(",");
+            for (String p : parts) {
+                customVector.add(Double.parseDouble(p.trim()));
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid vector format. Please ensure numeric values.");
+            return;
+        }
+
+        //classify the custom vector
+        String predictedLabel = Main.classifyCustomVector(customVector, k, Main.trainingDataRows);
+
+        //display the classification result
+        classificationResultLabel.setText("Classification: " + predictedLabel);
     }
 }

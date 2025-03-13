@@ -112,8 +112,36 @@ public class Main {
         return comparisons;
     }
 
+    public static String classifyCustomVector(ArrayList<Double> customVector, int k, ArrayList<TrainingDataRow> trainingDataRowObjArrayList) {
+        if (trainingDataRowObjArrayList == null || trainingDataRowObjArrayList.isEmpty()) {
+            return "No training data loaded!";
+        }
+
+        //we'll reuse the same approach: a min-heap of k nearest neighbors
+        PriorityQueue<Map.Entry<Double, String>> minHeap =
+                new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getKey));
+
+        for (TrainingDataRow trdr : trainingDataRowObjArrayList) {
+            double distance = calculateDistance(trdr.getVector(), customVector);
+            minHeap.offer(new AbstractMap.SimpleEntry<>(distance, trdr.getLabel()));
+            if (minHeap.size() > k) {
+                minHeap.poll(); //remove the largest
+            }
+        }
+
+        //tally labels among the k nearest neighbors
+        HashMap<String, Integer> labelCount = new HashMap<>();
+        while (!minHeap.isEmpty()) {
+            String label = minHeap.poll().getValue();
+            labelCount.put(label, labelCount.getOrDefault(label, 0) + 1);
+        }
+
+        //return the label that appears most often
+        return Collections.max(labelCount.entrySet(), Map.Entry.comparingByValue()).getKey();
+    }
+
     public static void main(String[] args) {
-        // Launch the GUI
+        //launch the GUI
         javax.swing.SwingUtilities.invokeLater(() -> new KNNGui());
     }
 
