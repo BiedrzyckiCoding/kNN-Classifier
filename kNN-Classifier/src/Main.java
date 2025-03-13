@@ -11,6 +11,25 @@ important:
 
 
 public class Main {
+    //fields for the gui class
+    public static ArrayList<TrainingDataRow> trainingDataRows;
+    public static ArrayList<TestDataRow> testDataRows;
+
+    //function to read the files
+    public static ArrayList<String> readFile(String path) {
+        ArrayList<String> lines = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    lines.add(line);
+                }
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return lines;
+    }
     //gets the distance of two vectors
     public static double calculateDistance(ArrayList<Double> trainingDataVector, ArrayList<Double> testDataVector) {
         int size = trainingDataVector.size();
@@ -22,71 +41,61 @@ public class Main {
     }
 
     //gets arraylist of Strings (the arraylist consisting of rows of a file) will make a new object for every line
-    public static ArrayList<TestDataRow> convertTestDataRow(ArrayList<String> testData){
-        ArrayList<TestDataRow> result = new ArrayList<>();
-
-        for (String line : testData) {
-            String[] parts = line.split(",");  // split using comma
-
+    public static ArrayList<TrainingDataRow> convertTrainingDataRow(ArrayList<String> data) {
+        ArrayList<TrainingDataRow> result = new ArrayList<>();
+        for (String line : data) {
+            String[] parts = line.split(",");
             ArrayList<Double> vector = new ArrayList<>();
             for (int i = 0; i < parts.length - 1; i++) {
-                vector.add(Double.parseDouble(parts[i])); // convert numeric values
+                vector.add(Double.parseDouble(parts[i]));
             }
-
-            String label = parts[parts.length - 1]; // last part is the label
-
-            result.add(new TestDataRow(vector, label));
+            String label = parts[parts.length - 1];
+            result.add(new TrainingDataRow(vector, label));
         }
         return result;
     }
 
-    //gets arraylist of Strings (the arraylist consisting of rows of a file) will make a new object for every line
-    public static ArrayList<TrainingDataRow> convertTrainingDataRow(ArrayList<String> testData){
-        ArrayList<TrainingDataRow> result = new ArrayList<>();
-
-        for (String line : testData) {
-            String[] parts = line.split(",");  // split using comma
-
+    public static ArrayList<TestDataRow> convertTestDataRow(ArrayList<String> data) {
+        ArrayList<TestDataRow> result = new ArrayList<>();
+        for (String line : data) {
+            String[] parts = line.split(",");
             ArrayList<Double> vector = new ArrayList<>();
             for (int i = 0; i < parts.length - 1; i++) {
-                vector.add(Double.parseDouble(parts[i])); // convert numeric values
+                vector.add(Double.parseDouble(parts[i]));
             }
-
-            String label = parts[parts.length - 1]; // last part is the label
-
-            result.add(new TrainingDataRow(vector, label));
+            String label = parts[parts.length - 1];
+            result.add(new TestDataRow(vector, label));
         }
         return result;
     }
 
     public static String getLabelOfTrainingVector(int k, int testDataIndex, ArrayList<TestDataRow> testDataRowObjArrayList, ArrayList<TrainingDataRow> trainingDataRowObjArrayList) {
 
-        //priority queue to store the k smallest distances with labels
+        //priorityQueue for k smallest distances
         PriorityQueue<Map.Entry<Double, String>> minHeap =
                 new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getKey));
 
         //test vector
         ArrayList<Double> testVector = testDataRowObjArrayList.get(testDataIndex).getVector();
 
-        //compute distances and store them in the minHeap
+        //compute distances to each training row
         for (TrainingDataRow trdr : trainingDataRowObjArrayList) {
             double distance = calculateDistance(trdr.getVector(), testVector);
             minHeap.offer(new AbstractMap.SimpleEntry<>(distance, trdr.getLabel()));
 
-            //keep only k elements in the heap
             if (minHeap.size() > k) {
-                minHeap.poll();
+                minHeap.poll(); // remove largest
             }
         }
 
-        //count occurrences of each label
+        //count label frequencies among k nearest neighbors
         HashMap<String, Integer> labelCount = new HashMap<>();
         while (!minHeap.isEmpty()) {
             String label = minHeap.poll().getValue();
             labelCount.put(label, labelCount.getOrDefault(label, 0) + 1);
         }
 
-        //find the most frequent label
+        //return most frequent label
         return Collections.max(labelCount.entrySet(), Map.Entry.comparingByValue()).getKey();
     }
 
@@ -94,57 +103,18 @@ public class Main {
     public static ArrayList<String> compareLabels(int k, ArrayList<TestDataRow> testDataRowObjArrayList, ArrayList<TrainingDataRow> trainingDataRowObjArrayList) {
         ArrayList<String> comparisons = new ArrayList<>();
 
-        //for each test row
         for (int i = 0; i < testDataRowObjArrayList.size(); i++) {
-            //predict the label using KNN
-            String predictedLabel = getLabelOfTrainingVector(k, i, testDataRowObjArrayList, trainingDataRowObjArrayList);
-
-            //actual label from the test data
-            String actualLabel = testDataRowObjArrayList.get(i).getLabel();
-
-            //build the comparison string
-            String comparison = actualLabel + ", should be: " + predictedLabel;
-
-            //store in the results list
-            comparisons.add(comparison);
+            String actual = testDataRowObjArrayList.get(i).getLabel();
+            String predicted = getLabelOfTrainingVector(k, i, testDataRowObjArrayList, trainingDataRowObjArrayList);
+            comparisons.add(actual + ", should be: " + predicted);
         }
 
         return comparisons;
     }
 
-    public static void main(String[] args) throws IOException {
-        int k = 3;
-        //1. read test data
-        BufferedReader inTest = new BufferedReader(new FileReader("C:\\Users\\Admin\\Desktop\\iris.test.data"));
-        String testLine;
-        ArrayList<String> testData = new ArrayList<>();
-        while ((testLine = inTest.readLine()) != null) {
-            testData.add(testLine);
-        }
-        inTest.close();
-
-        //convert test data lines into TestDataRow objects
-        ArrayList<TestDataRow> testDataRows = convertTestDataRow(testData);
-
-        //2. read training data
-        BufferedReader inTraining = new BufferedReader(new FileReader("C:\\Users\\Admin\\Desktop\\iris.data"));
-        String trainingLine;
-        ArrayList<String> trainingData = new ArrayList<>();
-        while ((trainingLine = inTraining.readLine()) != null) {
-            trainingData.add(trainingLine);
-        }
-        inTraining.close();
-
-        //convert training data lines into TrainingDataRow objects
-        ArrayList<TrainingDataRow> trainingDataRows = convertTrainingDataRow(trainingData);
-
-        //3. Compare labels
-        ArrayList<String> comparisonResults = compareLabels(k, testDataRows, trainingDataRows);
-
-        //print out each comparison
-        for (String result : comparisonResults) {
-            System.out.println(result);
-        }
+    public static void main(String[] args) {
+        // Launch the GUI
+        javax.swing.SwingUtilities.invokeLater(() -> new KNNGui());
     }
 
 }
