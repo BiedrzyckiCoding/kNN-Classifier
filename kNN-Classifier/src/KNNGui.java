@@ -20,62 +20,54 @@ public class KNNGui extends JFrame {
         super("kNN-Classifier");
         setLayout(new GridLayout(1, 4));
 
-        // Column 1: File input, k, and Buttons
+        //column 1: File input, k, and Buttons
         JPanel column1 = new JPanel();
         column1.setLayout(new BoxLayout(column1, BoxLayout.Y_AXIS));
 
-        // Training file path
+        //training file path
         column1.add(new JLabel("Training File:"));
         trainingFileField = new JTextField("C:\\Users\\Admin\\Desktop\\iris.data", 20);
         column1.add(trainingFileField);
 
-        // Test file path
+        //test file path
         column1.add(new JLabel("Test File:"));
         testFileField = new JTextField("C:\\Users\\Admin\\Desktop\\iris.test.data", 20);
         column1.add(testFileField);
 
-        // k-value input
+        //k-value input
         column1.add(new JLabel("k:"));
         kValueField = new JTextField("3", 5);
         column1.add(kValueField);
 
-        // Load Files button
+        //load Files button
         loadFilesButton = new JButton("Load Files");
         column1.add(loadFilesButton);
 
-        // Calculate Labels button
+        //calculate Labels button
         calculateButton = new JButton("Calculate Labels");
         column1.add(calculateButton);
 
         add(column1);
 
-        // ---------------------------------
-        // Column 2: Training data display
-        // ---------------------------------
+        //column 2: Training data display
         trainingDataArea = new JTextArea();
         trainingDataArea.setEditable(false);
         JScrollPane scrollPaneTraining = new JScrollPane(trainingDataArea);
         add(scrollPaneTraining);
 
-        // ---------------------------------
-        // Column 3: Test data display
-        // ---------------------------------
+        //column 3: Test data display
         testDataArea = new JTextArea();
         testDataArea.setEditable(false);
         JScrollPane scrollPaneTest = new JScrollPane(testDataArea);
         add(scrollPaneTest);
 
-        // ---------------------------------
-        // Column 4: Comparisons display
-        // ---------------------------------
+        //column 4: Comparisons display
         comparisonsArea = new JTextArea();
         comparisonsArea.setEditable(false);
         JScrollPane scrollPaneComparisons = new JScrollPane(comparisonsArea);
         add(scrollPaneComparisons);
 
-        // ---------------------------------
-        // Action Listeners
-        // ---------------------------------
+        //action Listeners
         loadFilesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -90,7 +82,7 @@ public class KNNGui extends JFrame {
             }
         });
 
-        // Window setup
+        //window setup
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 400);
         setLocationRelativeTo(null);
@@ -105,26 +97,26 @@ public class KNNGui extends JFrame {
         String trainingPath = trainingFileField.getText().trim();
         String testPath = testFileField.getText().trim();
 
-        // Use Main's static methods to read/convert data
+        //use Main's static methods to read/convert data
         ArrayList<String> trainingLines = Main.readFile(trainingPath);
         Main.trainingDataRows = Main.convertTrainingDataRow(trainingLines);
 
         ArrayList<String> testLines = Main.readFile(testPath);
         Main.testDataRows = Main.convertTestDataRow(testLines);
 
-        // Display training data
+        //display training data
         trainingDataArea.setText("TRAINING DATA LOADED:\n");
         for (var tr : Main.trainingDataRows) {
             trainingDataArea.append(tr.getVector() + " -> " + tr.getLabel() + "\n");
         }
 
-        // Display test data
+        //display test data
         testDataArea.setText("TEST DATA LOADED:\n");
         for (var tdr : Main.testDataRows) {
             testDataArea.append(tdr.getVector() + " -> " + tdr.getLabel() + "\n");
         }
 
-        // Clear previous comparisons
+        //clear previous comparisons
         comparisonsArea.setText("");
     }
 
@@ -132,13 +124,13 @@ public class KNNGui extends JFrame {
      * Parse k, run KNN logic, and display comparison results.
      */
     private void calculateLabels() {
-        // Make sure data is loaded
+        //make sure data is loaded
         if (Main.trainingDataRows == null || Main.testDataRows == null) {
             JOptionPane.showMessageDialog(this, "Please load the files first!");
             return;
         }
 
-        // Get user-specified k
+        //get user-specified k
         int k;
         try {
             k = Integer.parseInt(kValueField.getText().trim());
@@ -147,10 +139,10 @@ public class KNNGui extends JFrame {
             return;
         }
 
-        // Compare labels using Main's static method
+        //compare labels using Main's static method
         ArrayList<String> comparisons = Main.compareLabels(k, Main.testDataRows, Main.trainingDataRows);
 
-        // Display results
+        //display results
         comparisonsArea.setText("COMPARISONS:\n");
         for (String line : comparisons) {
             comparisonsArea.append(line + "\n");
