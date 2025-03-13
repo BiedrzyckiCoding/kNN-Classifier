@@ -22,7 +22,7 @@ public class KNNGui extends JFrame {
     private JLabel classificationResultLabel; //display classification
 
     public KNNGui() {
-        super("KNN GUI Example");
+        super("kNN-Classifier GUI ");
         setLayout(new GridLayout(1, 4));
 
         //column 1: File input, k, single vector, and Buttons
