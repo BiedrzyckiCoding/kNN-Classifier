@@ -70,28 +70,29 @@ public class Main {
     }
 
     public static String getLabelOfTrainingVector(int k, int testDataIndex, ArrayList<TestDataRow> testDataRowObjArrayList, ArrayList<TrainingDataRow> trainingDataRowObjArrayList) {
-        // List to store distances along with labels
-        ArrayList<Pair<Double, String>> distanceList = new ArrayList<>();
+        //list to store distances along with labels
+        ArrayList<Pair> distanceList = new ArrayList<>();
 
-        // Test vector
+        //test vector
         ArrayList<Double> testVector = testDataRowObjArrayList.get(testDataIndex).getVector();
 
-        // Compute distances to each training row
+        //compute distances to each training row
         for (TrainingDataRow trdr : trainingDataRowObjArrayList) {
             double distance = calculateDistance(trdr.getVector(), testVector);
-            distanceList.add(new Pair<>(distance, trdr.getLabel()));
+            //use the specialized Pair
+            distanceList.add(new Pair(distance, trdr.getLabel()));
         }
 
-        // Sort distances in ascending order
-        distanceList.sort(Comparator.comparingDouble(Pair::getKey));
+        //sort by distance in ascending order
+        Collections.sort(distanceList);
 
-        // Count label frequencies among k nearest neighbors
+        //count label frequencies among k nearest neighbors
         ArrayList<String> nearestLabels = new ArrayList<>();
         for (int i = 0; i < k && i < distanceList.size(); i++) {
-            nearestLabels.add(distanceList.get(i).getValue());
+            nearestLabels.add(distanceList.get(i).getLabel());
         }
 
-        // Determine the most frequent label
+        //determine the most frequent label
         String mostFrequentLabel = null;
         int maxCount = 0;
 
@@ -150,6 +151,43 @@ public class Main {
     public static void main(String[] args) {
         //launch the GUI
         javax.swing.SwingUtilities.invokeLater(() -> new KNNGui());
+
+        //maybe the gui is a bit weird?
+        //lets debug this xd
+
+        //immediately do the same process in main.
+        String trainingPath = "./kNN-Classifier/src/iris.data";
+        String testPath = "./kNN-Classifier/src/iris.test.data";
+
+        //load lines from the files
+        ArrayList<String> trainingLines = readFile(trainingPath);
+        ArrayList<String> testLines = readFile(testPath);
+
+        //convert them into the data objects
+        trainingDataRows = convertTrainingDataRow(trainingLines);
+        testDataRows = convertTestDataRow(testLines);
+
+        //choose a k value
+        int k = 100;
+
+        //get comparisons as "actual, should be: predicted"
+        ArrayList<String> comparisons = compareLabels(k, testDataRows, trainingDataRows);
+        //print them to console
+        for (String comparison : comparisons) {
+            System.out.println(comparison);
+        }
+
+        //calculate and print the accuracy
+        int correct = 0;
+        for (int i = 0; i < testDataRows.size(); i++) {
+            String actual = testDataRows.get(i).getLabel();
+            String predicted = getLabelOfTrainingVector(k, i, testDataRows, trainingDataRows);
+            if (actual.equals(predicted)) {
+                correct++;
+            }
+        }
+        double accuracy = (double) correct / testDataRows.size() * 100.0;
+        System.out.println("Accuracy: " + accuracy + "%");
     }
 
 }

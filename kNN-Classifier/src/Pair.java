@@ -1,17 +1,23 @@
-class Pair<K, V> {
-    private final K key;
-    private final V value;
+class Pair implements Comparable<Pair> {
+    private final double distance;
+    private final String label;
 
-    public Pair(K key, V value) {
-        this.key = key;
-        this.value = value;
+    public Pair(double distance, String label) {
+        this.distance = distance;
+        this.label = label;
     }
 
-    public K getKey() {
-        return key;
+    public double getDistance() {
+        return distance;
     }
 
-    public V getValue() {
-        return value;
+    public String getLabel() {
+        return label;
+    }
+
+    @Override
+    public int compareTo(Pair other) {
+        // Compare by distance
+        return Double.compare(this.distance, other.distance);
     }
 }
