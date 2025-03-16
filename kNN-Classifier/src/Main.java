@@ -70,33 +70,40 @@ public class Main {
     }
 
     public static String getLabelOfTrainingVector(int k, int testDataIndex, ArrayList<TestDataRow> testDataRowObjArrayList, ArrayList<TrainingDataRow> trainingDataRowObjArrayList) {
+        // List to store distances along with labels
+        ArrayList<Pair<Double, String>> distanceList = new ArrayList<>();
 
-        //priorityQueue for k smallest distances
-        PriorityQueue<Map.Entry<Double, String>> minHeap =
-                new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getKey));
-
-        //test vector
+        // Test vector
         ArrayList<Double> testVector = testDataRowObjArrayList.get(testDataIndex).getVector();
 
-        //compute distances to each training row
+        // Compute distances to each training row
         for (TrainingDataRow trdr : trainingDataRowObjArrayList) {
             double distance = calculateDistance(trdr.getVector(), testVector);
-            minHeap.offer(new AbstractMap.SimpleEntry<>(distance, trdr.getLabel()));
+            distanceList.add(new Pair<>(distance, trdr.getLabel()));
+        }
 
-            if (minHeap.size() > k) {
-                minHeap.poll(); // remove largest
+        // Sort distances in ascending order
+        distanceList.sort(Comparator.comparingDouble(Pair::getKey));
+
+        // Count label frequencies among k nearest neighbors
+        ArrayList<String> nearestLabels = new ArrayList<>();
+        for (int i = 0; i < k && i < distanceList.size(); i++) {
+            nearestLabels.add(distanceList.get(i).getValue());
+        }
+
+        // Determine the most frequent label
+        String mostFrequentLabel = null;
+        int maxCount = 0;
+
+        for (String label : nearestLabels) {
+            int count = Collections.frequency(nearestLabels, label);
+            if (count > maxCount) {
+                maxCount = count;
+                mostFrequentLabel = label;
             }
         }
 
-        //count label frequencies among k nearest neighbors
-        HashMap<String, Integer> labelCount = new HashMap<>();
-        while (!minHeap.isEmpty()) {
-            String label = minHeap.poll().getValue();
-            labelCount.put(label, labelCount.getOrDefault(label, 0) + 1);
-        }
-
-        //return most frequent label
-        return Collections.max(labelCount.entrySet(), Map.Entry.comparingByValue()).getKey();
+        return mostFrequentLabel;
     }
 
     //returns comparison between calculated label and given label in the form: "Givenlabel, should be: CalculatedLabel"

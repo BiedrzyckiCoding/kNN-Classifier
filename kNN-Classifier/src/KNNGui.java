@@ -31,12 +31,12 @@ public class KNNGui extends JFrame {
 
         //1. training file
         column1.add(new JLabel("Training File:"));
-        trainingFileField = new JTextField("C:\\Users\\Admin\\Desktop\\iris.data", 20);
+        trainingFileField = new JTextField("./kNN-Classifier/src/iris.data", 20);
         column1.add(trainingFileField);
 
         //2. test file
         column1.add(new JLabel("Test File:"));
-        testFileField = new JTextField("C:\\Users\\Admin\\Desktop\\iris.test.data", 20);
+        testFileField = new JTextField("./kNN-Classifier/src/iris.test.data", 20);
         column1.add(testFileField);
 
         //3. k-value input
@@ -149,12 +149,13 @@ public class KNNGui extends JFrame {
      * Calculate labels for the entire test set (already loaded).
      */
     private void calculateLabels() {
-        //make sure data is loaded
+        // Ensure data is loaded
         if (Main.trainingDataRows == null || Main.testDataRows == null) {
             JOptionPane.showMessageDialog(this, "Please load the files first!");
             return;
         }
 
+        // Parse k
         int k;
         try {
             k = Integer.parseInt(kValueField.getText().trim());
@@ -163,13 +164,31 @@ public class KNNGui extends JFrame {
             return;
         }
 
+        // Compare predicted labels vs. actual labels
         ArrayList<String> results = Main.compareLabels(k, Main.testDataRows, Main.trainingDataRows);
 
+        // Show comparison details
         comparisonsArea.setText("COMPARISONS:\n");
         for (String line : results) {
             comparisonsArea.append(line + "\n");
         }
+
+        // *** Accuracy Calculation Snippet Below ***
+        int correct = 0;
+        for (int i = 0; i < Main.testDataRows.size(); i++) {
+            String actual = Main.testDataRows.get(i).getLabel();
+            String predicted = Main.getLabelOfTrainingVector(k, i, Main.testDataRows, Main.trainingDataRows);
+
+            if (actual.equals(predicted)) {
+                correct++;
+            }
+        }
+
+        double accuracy = (double) correct / Main.testDataRows.size() * 100.0;
+        System.out.println("Accuracy: " + accuracy + "%"); // Prints to console
+        comparisonsArea.append("\nAccuracy: " + accuracy + "%\n"); // Optionally show in GUI
     }
+
 
     /**
      * Classify a single custom vector that the user enters.
